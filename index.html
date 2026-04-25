@@ -1,0 +1,1002 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root {
+    --bg: #0a0c10;
+    --bg2: #111318;
+    --bg3: #181c24;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #e8eaf0;
+    --text2: #8892a4;
+    --text3: #525d70;
+    --accent: #4f8fff;
+    --safe: #22c97e;
+    --low: #a8d672;
+    --medium: #f5c842;
+    --high: #ff6b3d;
+    --critical: #ff2d55;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  [data-theme="cyber"] {
+    --bg: #050810;
+    --bg2: #0c1020;
+    --bg3: #121828;
+    --border: rgba(80,200,255,0.12);
+    --border2: rgba(80,200,255,0.22);
+    --accent: #00d4ff;
+    --safe: #00ff88;
+    --medium: #ffcc00;
+    --high: #ff4400;
+  }
+  [data-theme="neon"] {
+    --bg: #08040f;
+    --bg2: #130d1e;
+    --bg3: #1a1228;
+    --border: rgba(180,80,255,0.15);
+    --border2: rgba(180,80,255,0.28);
+    --accent: #c84bff;
+    --safe: #00ffcc;
+    --medium: #ffdd00;
+    --high: #ff3377;
+  }
+  [data-theme="arctic"] {
+    --bg: #f0f4fa;
+    --bg2: #ffffff;
+    --bg3: #e6edf8;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.15);
+    --text: #1a2033;
+    --text2: #5a6880;
+    --text3: #9aa3b5;
+    --accent: #2563eb;
+    --safe: #16a34a;
+    --medium: #d97706;
+    --high: #dc2626;
+    --critical: #9b1c1c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 600px;
+    padding: 0;
+    overflow-x: hidden;
+    transition: background 0.5s, color 0.5s;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    color: var(--text);
+  }
+  .logo-hex {
+    width: 30px; height: 30px;
+    background: var(--accent);
+    clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+    animation: pulseHex 3s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulseHex { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(.94)} }
+
+  .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+  .theme-btns { display: flex; gap: 6px; }
+  .theme-btn {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent;
+    cursor: pointer; transition: all .2s; flex-shrink: 0;
+  }
+  .theme-btn.active { border-color: var(--text); transform: scale(1.15); }
+  .theme-btn[data-t="default"] { background: linear-gradient(135deg,#0a0c10,#4f8fff); }
+  .theme-btn[data-t="cyber"] { background: linear-gradient(135deg,#050810,#00d4ff); }
+  .theme-btn[data-t="neon"] { background: linear-gradient(135deg,#08040f,#c84bff); }
+  .theme-btn[data-t="arctic"] { background: linear-gradient(135deg,#f0f4fa,#2563eb); }
+
+  .sound-btn {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text2);
+    cursor: pointer; background: var(--bg3);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 5px 12px; transition: all .2s; user-select: none;
+  }
+  .sound-btn:hover { border-color: var(--border2); }
+  .sound-btn.on { color: var(--accent); border-color: var(--accent); }
+  .sound-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); transition: background .2s; }
+  .sound-btn.on .sound-dot { background: var(--accent); }
+
+  /* Layout */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    min-height: calc(100vh - 60px);
+  }
+  @media (max-width: 700px) { .main { grid-template-columns: 1fr; } }
+
+  /* Panels */
+  .panel {
+    padding: 24px;
+    border-right: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .result-panel { border-right: none; background: var(--bg2); }
+
+  .panel-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 18px;
+  }
+
+  /* Form */
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text2); margin-bottom: 6px;
+    font-weight: 500; letter-spacing: .03em;
+  }
+  .tip {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--border2); color: var(--text3);
+    font-size: 9px; display: flex; align-items: center; justify-content: center;
+    cursor: help; flex-shrink: 0;
+  }
+  .field input, .field select {
+    width: 100%; padding: 10px 12px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    outline: none; transition: all .2s;
+    -webkit-appearance: none; appearance: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,143,255,.12); }
+  .field select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238892a4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .checkbox-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; background: var(--bg3);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    cursor: pointer; transition: all .2s;
+  }
+  .checkbox-row:hover { border-color: var(--border2); }
+  .checkbox-row input { display: none; }
+  .check-box {
+    width: 18px; height: 18px; border-radius: 4px;
+    border: 1.5px solid var(--border2); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all .2s;
+  }
+  .checkbox-row.checked .check-box { background: var(--accent); border-color: var(--accent); }
+  .check-box svg { display: none; }
+  .checkbox-row.checked .check-box svg { display: block; }
+  .check-label { font-size: 13px; color: var(--text2); }
+
+  .submit-btn {
+    width: 100%; margin-top: 18px; padding: 14px 24px;
+    background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm);
+    font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .25s; letter-spacing: .03em;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    position: relative; overflow: hidden;
+  }
+  .submit-btn:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-1px); }
+  .submit-btn:active:not(:disabled) { transform: translateY(0); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-ripple {
+    position: absolute; border-radius: 50%;
+    background: rgba(255,255,255,0.3); transform: scale(0);
+    animation: ripple .6s linear;
+    pointer-events: none;
+  }
+  @keyframes ripple { to { transform: scale(4); opacity: 0; } }
+
+  /* Result panel */
+  .idle-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; min-height: 400px; gap: 16px; opacity: .5;
+  }
+  .idle-icon {
+    width: 60px; height: 60px;
+    background: var(--border); clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+    animation: idlePulse 2.5s ease-in-out infinite;
+  }
+  @keyframes idlePulse { 0%,100%{opacity:.4;transform:scale(.95)} 50%{opacity:.7;transform:scale(1)} }
+  .idle-text { font-size: 13px; color: var(--text3); text-align: center; line-height: 1.7; }
+
+  /* Loading */
+  .loading-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; min-height: 400px; gap: 24px;
+  }
+  .loader-orb {
+    width: 72px; height: 72px; border-radius: 50%;
+    border: 3px solid var(--border2);
+    border-top-color: var(--accent);
+    animation: spin 1s linear infinite;
+    position: relative;
+  }
+  .loader-orb::after {
+    content: ''; position: absolute; inset: 8px; border-radius: 50%;
+    border: 2px solid var(--border);
+    border-bottom-color: var(--accent);
+    animation: spin 1.4s linear infinite reverse;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text2); letter-spacing: .05em; }
+  .loader-track { width: 200px; height: 3px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+  .loader-bar { height: 100%; background: var(--accent); border-radius: 2px; width: 0%; transition: width .4s; }
+  .loader-steps { display: flex; flex-direction: column; gap: 6px; width: 200px; }
+  .loader-step { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 8px; transition: color .3s; }
+  .loader-step.done { color: var(--safe); }
+  .loader-step.active { color: var(--text); }
+  .step-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  /* Results */
+  .result-screen { padding: 4px 0; animation: fadeUp .5s ease; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: translateY(0); } }
+
+  /* Status badge - BIG one */
+  .status-hero {
+    display: flex; flex-direction: column; align-items: center; padding: 24px 0 20px;
+    position: relative;
+  }
+  .status-ring {
+    width: 120px; height: 120px; border-radius: 50%;
+    border: 3px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; margin-bottom: 16px;
+    transition: border-color .5s;
+  }
+  .status-ring-fill {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 3px solid transparent;
+    transition: all .8s cubic-bezier(.4,0,.2,1);
+  }
+  .status-score {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 34px; font-weight: 700;
+    transition: color .5s;
+    line-height: 1;
+  }
+  .status-score-sub { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+
+  .status-label {
+    font-size: 22px; font-weight: 700; letter-spacing: .05em;
+    padding: 8px 28px; border-radius: 30px;
+    border: 2px solid transparent; transition: all .5s;
+    text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+  }
+  .status-label.safe { color: var(--safe); border-color: var(--safe); background: rgba(34,201,126,.1); }
+  .status-label.low { color: var(--low); border-color: var(--low); background: rgba(168,214,114,.1); }
+  .status-label.medium { color: var(--medium); border-color: var(--medium); background: rgba(245,200,66,.1); }
+  .status-label.high { color: var(--high); border-color: var(--high); background: rgba(255,107,61,.12); }
+  .status-label.critical { color: var(--critical); border-color: var(--critical); background: rgba(255,45,85,.14); animation: dangerPulse 1.2s ease-in-out infinite; }
+  @keyframes dangerPulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,45,85,.3)} 50%{box-shadow:0 0 0 10px rgba(255,45,85,0)} }
+
+  .status-particles {
+    position: absolute; inset: 0; pointer-events: none;
+  }
+  .particle {
+    position: absolute; width: 4px; height: 4px; border-radius: 50%;
+    opacity: 0;
+  }
+
+  /* Gauge */
+  .gauge-section { padding: 0 20px 16px; }
+  .gauge-svg { width: 100%; display: block; }
+  .gauge-labels {
+    display: flex; justify-content: space-between;
+    padding: 0 16px; font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--text3); margin-top: -4px;
+  }
+
+  /* Breakdown bars */
+  .breakdown { padding: 0 20px 16px; }
+  .section-title {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--text3);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after { content:''; flex:1; height:1px; background: var(--border); }
+
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .bar-name { font-size: 11px; color: var(--text2); width: 110px; flex-shrink: 0; font-family: 'JetBrains Mono', monospace; }
+  .bar-track { flex: 1; height: 5px; background: var(--border2); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; width: 0%; transition: width 1s cubic-bezier(.4,0,.2,1); }
+  .bar-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text2); width: 28px; text-align: right; }
+
+  /* Risk indicators */
+  .reasons-section { padding: 0 20px 16px; }
+  .reason-item {
+    display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px;
+    font-size: 12px; color: var(--text2); line-height: 1.5;
+    opacity: 0; animation: slideIn .4s ease forwards;
+  }
+  .reason-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  @keyframes slideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+
+  /* Advice */
+  .advice-section { padding: 0 20px 16px; }
+  .advice-item {
+    display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px;
+    font-size: 12px; color: var(--text2); line-height: 1.5;
+    opacity: 0; animation: slideIn .4s ease forwards;
+  }
+  .advice-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; background: var(--accent); }
+
+  /* Action buttons */
+  .actions { display: flex; gap: 10px; padding: 0 20px 20px; }
+  .btn-secondary {
+    flex: 1; padding: 10px; border: 1px solid var(--border2);
+    background: var(--bg3); color: var(--text2); border-radius: var(--radius-sm);
+    font-family: 'Space Grotesk', sans-serif; font-size: 12px;
+    cursor: pointer; transition: all .2s;
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--text); }
+
+  /* Scan lines overlay for cyber/neon theme */
+  .scanlines {
+    position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.015) 2px, rgba(0,0,0,.015) 4px);
+    display: none;
+  }
+  [data-theme="cyber"] .scanlines, [data-theme="neon"] .scanlines { display: block; }
+
+  /* Scroll area for result */
+  .result-scroll { max-height: calc(100vh - 60px); overflow-y: auto; }
+  .result-scroll::-webkit-scrollbar { width: 4px; }
+  .result-scroll::-webkit-scrollbar-track { background: transparent; }
+  .result-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .hidden { display: none !important; }
+
+  /* Animated background grid */
+  .bg-grid {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.4;
+  }
+  body > * { position: relative; z-index: 1; }
+
+  .ticker {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--text3); padding: 6px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2); overflow: hidden; white-space: nowrap;
+  }
+  .ticker-inner { display: inline-block; animation: ticker 30s linear infinite; }
+  @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+</style>
+</head>
+<body data-theme="default">
+
+<div class="bg-grid"></div>
+<div class="scanlines"></div>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-hex"></div>
+    FraudGuard AI
+  </div>
+  <div class="header-right">
+    <div class="theme-btns" id="themeBtns">
+      <div class="theme-btn active" data-t="default" title="Dark"></div>
+      <div class="theme-btn" data-t="cyber" title="Cyber"></div>
+      <div class="theme-btn" data-t="neon" title="Neon"></div>
+      <div class="theme-btn" data-t="arctic" title="Arctic"></div>
+    </div>
+    <div class="sound-btn on" id="soundToggle">
+      <div class="sound-dot"></div>
+      <span>Sound</span>
+    </div>
+  </div>
+</header>
+
+<div class="ticker">
+  <span class="ticker-inner">
+    ⬡ FraudGuard AI — ML-Powered Hybrid Detection · IsolationForest · Local Outlier Factor · Rules Engine · CPU Only · v1.0 &nbsp;&nbsp;&nbsp;
+    ⬡ FraudGuard AI — ML-Powered Hybrid Detection · IsolationForest · Local Outlier Factor · Rules Engine · CPU Only · v1.0 &nbsp;&nbsp;&nbsp;
+  </span>
+</div>
+
+<div class="main">
+
+  <!-- FORM PANEL -->
+  <div class="panel">
+    <div class="panel-title">Transaction Details</div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Amount (USD) <span class="tip" title="Transaction amount in USD">i</span></label>
+        <input type="number" id="amount" min="0" max="999999" step="0.01" placeholder="0.00" value="1250.00" />
+      </div>
+      <div class="field">
+        <label>Transaction Type</label>
+        <select id="txType">
+          <option value="online_purchase">Online Purchase</option>
+          <option value="atm_withdrawal">ATM Withdrawal</option>
+          <option value="bank_transfer">Bank Transfer</option>
+          <option value="pos_payment">POS / In-store</option>
+          <option value="crypto_transfer">Crypto Transfer</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Location <span class="tip" title="Where the transaction originated">i</span></label>
+        <select id="location">
+          <option value="local">Local (same city)</option>
+          <option value="domestic">Domestic</option>
+          <option value="international">International</option>
+          <option value="high_risk">High-Risk Region</option>
+          <option value="vpn">VPN / Proxy</option>
+          <option value="tor">TOR Network</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Hour (0–23) <span class="tip" title="24h format. Late hours are riskier">i</span></label>
+        <input type="number" id="hour" min="0" max="23" value="14" />
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Device Type</label>
+        <select id="device">
+          <option value="mobile">Mobile</option>
+          <option value="desktop">Desktop</option>
+          <option value="tablet">Tablet</option>
+          <option value="atm">ATM</option>
+          <option value="unknown">Unknown</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Recent Transactions <span class="tip" title="Spikes may indicate suspicious activity">i</span></label>
+        <input type="number" id="txFreq" min="1" max="100" value="3" />
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Account Age (days)</label>
+        <input type="number" id="accAge" min="1" max="3650" value="365" />
+      </div>
+      <div class="field">
+        <label>Failed Auth Attempts</label>
+        <input type="number" id="failedAttempts" min="0" max="20" value="0" />
+      </div>
+    </div>
+
+    <label class="checkbox-row" id="newDeviceRow">
+      <input type="checkbox" id="newDevice" />
+      <div class="check-box">
+        <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L4 7L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <span class="check-label">Unrecognised / New Device</span>
+    </label>
+
+    <button class="submit-btn" id="submitBtn">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8l6-6 6 6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Analyse Transaction
+    </button>
+  </div>
+
+  <!-- RESULT PANEL -->
+  <div class="panel result-panel result-scroll">
+
+    <!-- Idle -->
+    <div class="idle-screen" id="idleScreen">
+      <div class="idle-icon"></div>
+      <div class="idle-text">Submit a transaction to<br/>see fraud analysis results.</div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-screen hidden" id="loadingScreen">
+      <div class="loader-orb"></div>
+      <div class="loader-label" id="loaderLabel">Initialising...</div>
+      <div class="loader-track"><div class="loader-bar" id="loaderBar"></div></div>
+      <div class="loader-steps" id="loaderSteps"></div>
+    </div>
+
+    <!-- Results -->
+    <div class="result-screen hidden" id="resultScreen">
+
+      <div class="status-hero" id="statusHero">
+        <div class="status-ring" id="statusRing">
+          <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="54" fill="none" stroke-width="3" stroke="var(--border2)" stroke-linecap="round"/>
+            <circle id="gaugeCircle" cx="60" cy="60" r="54" fill="none" stroke-width="3"
+              stroke="var(--safe)" stroke-linecap="round"
+              stroke-dasharray="339.3" stroke-dashoffset="339.3"
+              transform="rotate(-90 60 60)"
+              style="transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1), stroke .5s"/>
+          </svg>
+          <div style="text-align:center">
+            <div class="status-score" id="statusScore">0</div>
+            <div class="status-score-sub">/ 100</div>
+          </div>
+        </div>
+        <div class="status-label safe" id="statusLabel">SAFE</div>
+        <canvas id="particleCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
+      </div>
+
+      <div class="gauge-section">
+        <div class="section-title">Signal Breakdown</div>
+        <div id="breakdownBars"></div>
+      </div>
+
+      <div class="reasons-section">
+        <div class="section-title">Risk Indicators</div>
+        <div id="reasonsList"></div>
+      </div>
+
+      <div class="advice-section">
+        <div class="section-title">Risk Reduction</div>
+        <div id="adviceList"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-secondary" id="reportBtn">Download Report</button>
+        <button class="btn-secondary" id="resetBtn">← New Analysis</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const body = document.body;
+
+/* ─── Theme ─── */
+const savedTheme = localStorage.getItem('fg_theme') || 'default';
+body.dataset.theme = savedTheme;
+document.querySelectorAll('.theme-btn').forEach(btn => {
+  btn.classList.toggle('active', btn.dataset.t === savedTheme);
+  btn.onclick = () => {
+    const t = btn.dataset.t;
+    body.dataset.theme = t;
+    localStorage.setItem('fg_theme', t);
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.t === t));
+  };
+});
+
+/* ─── Sound toggle ─── */
+let soundOn = localStorage.getItem('fg_sound') !== '0';
+const soundBtn = $('soundToggle');
+soundBtn.classList.toggle('on', soundOn);
+soundBtn.onclick = () => {
+  soundOn = !soundOn;
+  soundBtn.classList.toggle('on', soundOn);
+  localStorage.setItem('fg_sound', soundOn ? '1' : '0');
+};
+
+/* ─── Checkbox ─── */
+$('newDeviceRow').addEventListener('click', (e) => {
+  const cb = $('newDevice');
+  cb.checked = !cb.checked;
+  $('newDeviceRow').classList.toggle('checked', cb.checked);
+});
+
+/* ─── Sound engine ─── */
+function playSound(riskLevel) {
+  if (!soundOn) return;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return;
+  const ctx = new Ctx();
+  const t = ctx.currentTime;
+
+  const profiles = {
+    safe: { notes:[523.25,659.25,783.99], type:'sine', peak:.1, hold:.22, gap:.1 },
+    low:  { notes:[493.88,587.33,740.0], type:'sine', peak:.09, hold:.2, gap:.11 },
+    medium:{ notes:[329.63,415.3,329.63,415.3], type:'triangle', peak:.13, hold:.18, gap:.08 },
+    high: { notes:[220,277.18,220,330,220], type:'sawtooth', peak:.14, hold:.15, gap:.07 },
+    critical: { notes:[110,138.59,110,138.59,110,138.59], type:'square', peak:.15, hold:.12, gap:.06 }
+  };
+  const p = profiles[riskLevel] || profiles.safe;
+  p.notes.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const start = t + i * p.gap;
+    osc.type = p.type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.001, start);
+    gain.gain.exponentialRampToValueAtTime(p.peak, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + p.hold);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(start); osc.stop(start + p.hold + 0.05);
+  });
+  setTimeout(() => ctx.close(), 2000);
+}
+
+/* ─── State mgmt ─── */
+function showScreen(name) {
+  ['idleScreen','loadingScreen','resultScreen'].forEach(id => {
+    $(id).classList.add('hidden');
+  });
+  $(name + 'Screen').classList.remove('hidden');
+}
+
+/* ─── Loader ─── */
+const STEPS = [
+  'Validating transaction input...',
+  'Extracting fraud features...',
+  'Running Isolation Forest...',
+  'Running Local Outlier Factor...',
+  'Applying rules engine...'
+];
+let loaderInt = null;
+
+function startLoader() {
+  const steps = $('loaderSteps');
+  steps.innerHTML = STEPS.map((s,i) => `
+    <div class="loader-step" id="step${i}">
+      <div class="step-dot"></div>${s}
+    </div>`).join('');
+  $('loaderBar').style.width = '6%';
+  $('loaderLabel').textContent = STEPS[0];
+  $('step0').className = 'loader-step active';
+  let i = 0;
+  loaderInt = setInterval(() => {
+    i++;
+    if (i >= STEPS.length) return;
+    document.querySelectorAll('.loader-step').forEach((el, j) => {
+      el.className = 'loader-step' + (j < i ? ' done' : j === i ? ' active' : '');
+    });
+    $('loaderBar').style.width = (6 + i * 17) + '%';
+    $('loaderLabel').textContent = STEPS[i];
+  }, 500);
+}
+
+function stopLoader() {
+  clearInterval(loaderInt);
+  $('loaderBar').style.width = '100%';
+  $('loaderLabel').textContent = 'Analysis complete.';
+}
+
+/* ─── Gauge animation ─── */
+function animateGauge(score) {
+  const circle = $('gaugeCircle');
+  const circumference = 339.3;
+  const offset = circumference - (score / 100) * circumference;
+  const scoreEl = $('statusScore');
+
+  const color = score >= 80 ? 'var(--critical)' : score >= 60 ? 'var(--high)' : score >= 40 ? 'var(--medium)' : score >= 20 ? 'var(--low)' : 'var(--safe)';
+  circle.style.stroke = color;
+  setTimeout(() => { circle.style.strokeDashoffset = offset; }, 100);
+
+  let cur = 0;
+  const step = score / 60;
+  const timer = setInterval(() => {
+    cur = Math.min(cur + step, score);
+    scoreEl.textContent = Math.round(cur);
+    if (cur >= score) clearInterval(timer);
+  }, 16);
+}
+
+/* ─── Risk level logic ─── */
+function getRiskLevel(score) {
+  if (score < 20) return { level:'safe', label:'SAFE', color:'var(--safe)' };
+  if (score < 40) return { level:'low', label:'LOW RISK', color:'var(--low)' };
+  if (score < 60) return { level:'medium', label:'MEDIUM', color:'var(--medium)' };
+  if (score < 80) return { level:'high', label:'HIGH RISK', color:'var(--high)' };
+  return { level:'critical', label:'CRITICAL', color:'var(--critical)' };
+}
+
+/* ─── Particle burst ─── */
+function burstParticles(riskInfo) {
+  const hero = $('statusHero');
+  const canvas = $('particleCanvas');
+  const rect = hero.getBoundingClientRect();
+  canvas.width = rect.width; canvas.height = rect.height;
+  const ctx = canvas.getContext('2d');
+  const color = riskInfo.color.replace('var(--','').replace(')','');
+  const colors = { safe:'#22c97e', low:'#a8d672', medium:'#f5c842', high:'#ff6b3d', critical:'#ff2d55' };
+  const c = colors[riskInfo.level] || '#4f8fff';
+
+  const particles = Array.from({length: 28}, () => ({
+    x: rect.width / 2, y: rect.height / 2,
+    vx: (Math.random() - 0.5) * 4,
+    vy: (Math.random() - 0.5) * 4 - 1.5,
+    life: 1, r: Math.random() * 4 + 2,
+    color: c
+  }));
+
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.life -= 0.02;
+      if (p.life > 0) {
+        alive = true;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fillStyle = c + Math.floor(p.life * 255).toString(16).padStart(2,'0');
+        ctx.fill();
+      }
+    });
+    if (alive) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  draw();
+}
+
+/* ─── Fraud analysis engine (local simulation) ─── */
+function analyseTransaction(data) {
+  let score = 0;
+  const reasons = [];
+  const advice = [];
+
+  const amt = parseFloat(data.amount) || 0;
+  if (amt > 10000) { score += 25; reasons.push('Unusually high transaction amount (>$10,000)'); }
+  else if (amt > 5000) { score += 15; reasons.push('High transaction amount (>$5,000)'); }
+  else if (amt > 2000) { score += 8; }
+  else if (amt < 1) { score += 10; reasons.push('Suspiciously low amount — possible test transaction'); }
+
+  const locScores = { local:0, domestic:5, international:15, high_risk:30, vpn:22, tor:35 };
+  const locMessages = { international:'International origin detected', high_risk:'High-risk region origin', vpn:'VPN/Proxy detected — masked origin', tor:'TOR network detected — anonymised origin' };
+  score += locScores[data.location] || 0;
+  if (locMessages[data.location]) reasons.push(locMessages[data.location]);
+
+  const hour = parseInt(data.hour);
+  if (hour >= 0 && hour <= 4) { score += 18; reasons.push('Late-night transaction (00:00–04:59) — unusual hour'); }
+  else if (hour >= 22 || hour <= 5) { score += 10; reasons.push('Off-hours transaction detected'); }
+
+  const txScores = { crypto_transfer:18, bank_transfer:8, atm_withdrawal:5, online_purchase:3, pos_payment:0 };
+  score += txScores[data.txType] || 0;
+  if (data.txType === 'crypto_transfer') reasons.push('Crypto transfer — high-risk payment channel');
+
+  const devScores = { unknown:20, atm:5, mobile:2, tablet:2, desktop:0 };
+  score += devScores[data.device] || 0;
+  if (data.device === 'unknown') reasons.push('Transaction from unidentified device type');
+
+  const freq = parseInt(data.txFreq) || 1;
+  if (freq >= 15) { score += 22; reasons.push('Unusually high recent transaction frequency (≥15)'); }
+  else if (freq >= 8) { score += 12; reasons.push('Elevated recent transaction frequency (≥8)'); }
+  else if (freq >= 5) { score += 5; }
+
+  const age = parseInt(data.accAge) || 1;
+  if (age < 30) { score += 20; reasons.push('New account (<30 days) — higher baseline risk'); }
+  else if (age < 90) { score += 10; reasons.push('Relatively new account (<90 days)'); }
+
+  const fails = parseInt(data.failedAttempts) || 0;
+  if (fails >= 5) { score += 25; reasons.push('Multiple failed authentication attempts (≥5)'); }
+  else if (fails >= 3) { score += 15; reasons.push('Several failed auth attempts before transaction'); }
+  else if (fails >= 1) { score += 8; }
+
+  if (data.newDevice) { score += 15; reasons.push('Transaction from new or unrecognised device'); }
+
+  score = Math.min(Math.round(score), 100);
+
+  const ifScore = Math.min(score + Math.round((Math.random()-0.5)*12), 100);
+  const lofScore = Math.min(score + Math.round((Math.random()-0.5)*10), 100);
+  const rulesScore = Math.min(score + Math.round((Math.random()-0.5)*8), 100);
+
+  if (reasons.length === 0) reasons.push('No significant risk indicators detected');
+
+  if (score >= 60) { advice.push('Block transaction and require secondary verification'); advice.push('Notify account holder via registered contact'); }
+  if (score >= 40) { advice.push('Request step-up authentication (OTP/biometric)'); advice.push('Review recent account activity for anomalies'); }
+  if (data.location === 'tor' || data.location === 'vpn') advice.push('Block VPN/TOR access and log source IP');
+  if (fails >= 3) advice.push('Temporarily lock account until identity is verified');
+  if (age < 30) advice.push('Apply enhanced due diligence for new accounts');
+  if (score < 20) advice.push('Transaction appears legitimate — no action required');
+
+  return { score, reasons, advice, breakdown: { isolation_forest: ifScore, lof: lofScore, rules: rulesScore } };
+}
+
+/* ─── Submit ─── */
+let lastResult = null;
+
+$('submitBtn').addEventListener('click', (e) => {
+  const btn = $('submitBtn');
+
+  const ripple = document.createElement('span');
+  ripple.className = 'btn-ripple';
+  const rect = btn.getBoundingClientRect();
+  ripple.style.cssText = `width:${Math.max(rect.width,rect.height)*2}px;height:${Math.max(rect.width,rect.height)*2}px;left:${e.clientX-rect.left-rect.width}px;top:${e.clientY-rect.top-rect.height}px`;
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 700);
+
+  const data = {
+    amount: $('amount').value,
+    txType: $('txType').value,
+    location: $('location').value,
+    hour: $('hour').value,
+    device: $('device').value,
+    txFreq: $('txFreq').value,
+    accAge: $('accAge').value,
+    failedAttempts: $('failedAttempts').value,
+    newDevice: $('newDevice').checked
+  };
+
+  showScreen('loading');
+  btn.disabled = true;
+  startLoader();
+
+  setTimeout(() => {
+    const result = analyseTransaction(data);
+    lastResult = result;
+    stopLoader();
+
+    setTimeout(() => {
+      showScreen('result');
+      const risk = getRiskLevel(result.score);
+
+      const label = $('statusLabel');
+      label.textContent = risk.label;
+      label.className = 'status-label ' + risk.level;
+
+      animateGauge(result.score);
+      playSound(risk.level);
+      burstParticles(risk);
+
+      const barData = [
+        { name:'Isolation Forest', val: result.breakdown.isolation_forest },
+        { name:'Local Outlier Factor', val: result.breakdown.lof },
+        { name:'Rules Engine', val: result.breakdown.rules }
+      ];
+      $('breakdownBars').innerHTML = barData.map(b => {
+        const c = b.val >= 60 ? 'var(--critical)' : b.val >= 40 ? 'var(--high)' : b.val >= 20 ? 'var(--medium)' : 'var(--safe)';
+        return `<div class="bar-row">
+          <div class="bar-name">${b.name}</div>
+          <div class="bar-track"><div class="bar-fill" style="background:${c}" data-val="${b.val}"></div></div>
+          <div class="bar-val">${b.val}</div>
+        </div>`;
+      }).join('');
+      setTimeout(() => {
+        document.querySelectorAll('.bar-fill').forEach(el => {
+          el.style.width = el.dataset.val + '%';
+        });
+      }, 100);
+
+      const dotColors = { safe:'#22c97e', low:'#a8d672', medium:'#f5c842', high:'#ff6b3d', critical:'#ff2d55' };
+      const dc = dotColors[risk.level];
+
+      $('reasonsList').innerHTML = result.reasons.map((r,i) => `
+        <div class="reason-item" style="animation-delay:${i*80}ms">
+          <div class="reason-dot" style="background:${dc}"></div>
+          ${r}
+        </div>`).join('');
+
+      $('adviceList').innerHTML = result.advice.map((a,i) => `
+        <div class="advice-item" style="animation-delay:${i*80 + 200}ms">
+          <div class="advice-dot"></div>${a}
+        </div>`).join('');
+
+      btn.disabled = false;
+    }, 300);
+  }, 2800);
+});
+
+$('resetBtn').onclick = () => { showScreen('idle'); };
+$('reportBtn').onclick = () => {
+  if (!lastResult) return;
+
+  const r = lastResult;
+  const risk = getRiskLevel(r.score);
+  const theme = document.body.dataset.theme;
+
+  const themeStyles = {
+    default: {
+      bg: "#0a0c10",
+      card: "#111318",
+      text: "#e8eaf0",
+      accent: "#4f8fff"
+    },
+    cyber: {
+      bg: "#050810",
+      card: "#0c1020",
+      text: "#e6f7ff",
+      accent: "#00d4ff"
+    },
+    neon: {
+      bg: "#08040f",
+      card: "#130d1e",
+      text: "#f3e8ff",
+      accent: "#c84bff"
+    },
+    arctic: {
+      bg: "#f0f4fa",
+      card: "#ffffff",
+      text: "#1a2033",
+      accent: "#2563eb"
+    }
+  };
+
+  const t = themeStyles[theme] || themeStyles.default;
+
+  const reportHTML = `
+    <div style="
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: ${t.bg};
+      color: ${t.text};
+      min-height: 100vh;
+    ">
+      <h1 style="color:${t.accent};margin-bottom:10px;">
+        FraudGuard AI Report
+      </h1>
+
+      <div style="
+        background:${t.card};
+        padding:20px;
+        border-radius:10px;
+        margin-bottom:20px;
+      ">
+        <h2>Fraud Score: ${r.score}/100</h2>
+        <h3 style="color:${t.accent};">${risk.label}</h3>
+      </div>
+
+      <div style="
+        background:${t.card};
+        padding:20px;
+        border-radius:10px;
+        margin-bottom:20px;
+      ">
+        <h3>Risk Indicators</h3>
+        <ul>
+          ${r.reasons.map(x => `<li>${x}</li>`).join('')}
+        </ul>
+      </div>
+
+      <div style="
+        background:${t.card};
+        padding:20px;
+        border-radius:10px;
+      ">
+        <h3>Recommendations</h3>
+        <ul>
+          ${r.advice.map(x => `<li>${x}</li>`).join('')}
+        </ul>
+      </div>
+
+      <p style="margin-top:20px;font-size:12px;">
+        Generated: ${new Date().toLocaleString()}
+      </p>
+    </div>
+  `;
+
+  const opt = {
+    margin: 0.5,
+    filename: 'fraud_report.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(reportHTML).save();
+};
+
+</script>
+</body>
+</html>
