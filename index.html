@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -997,6 +996,900 @@ $('reportBtn').onclick = () => {
   html2pdf().set(opt).from(reportHTML).save();
 };
 
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FRAUDGUARD AI CHATBOT — Natural Language Fraud Analysis
+     ════════════════════════════════════════════════════════════ -->
+<style>
+/* ── Chatbot Container ─────────────────────────────────────── */
+#fg-chatbot {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 9999;
+  font-family: 'Space Grotesk', sans-serif;
+  --cb-accent: #00C9A7;
+  --cb-bg: #0a0d14;
+  --cb-bg2: #111520;
+  --cb-bg3: #181d2a;
+  --cb-border: rgba(0,201,167,0.18);
+  --cb-text: #e2e8f0;
+  --cb-text2: #8892a4;
+  --cb-red: #ff4757;
+  --cb-amber: #ffa502;
+  --cb-green: #2ed573;
+  --cb-radius: 18px;
+}
+
+/* ── Bubble Button ─────────────────────────────────────────── */
+#fg-bubble {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00C9A7 0%, #006b5c 100%);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(0,201,167,0.40), 0 2px 8px rgba(0,0,0,0.5);
+  transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), box-shadow 0.3s;
+  position: relative;
+  animation: bubbleFloat 3s ease-in-out infinite;
+}
+#fg-bubble:hover {
+  transform: scale(1.12);
+  box-shadow: 0 12px 40px rgba(0,201,167,0.55), 0 2px 8px rgba(0,0,0,0.5);
+}
+@keyframes bubbleFloat {
+  0%,100% { transform: translateY(0px); }
+  50%      { transform: translateY(-5px); }
+}
+#fg-bubble.open { animation: none; transform: rotate(45deg) scale(0.9); }
+#fg-bubble svg { transition: transform 0.3s; }
+
+/* Pulse ring around bubble */
+#fg-bubble::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(0,201,167,0.4);
+  animation: ringPulse 2s ease-out infinite;
+}
+#fg-bubble::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,201,167,0.18);
+  animation: ringPulse 2s ease-out infinite 0.5s;
+}
+@keyframes ringPulse {
+  0%   { opacity:1; transform: scale(1); }
+  100% { opacity:0; transform: scale(1.35); }
+}
+
+/* Notification dot */
+#fg-notif {
+  position: absolute;
+  top: 2px; right: 2px;
+  width: 14px; height: 14px;
+  background: var(--cb-red);
+  border-radius: 50%;
+  border: 2px solid var(--cb-bg);
+  font-size: 8px; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  animation: notifBounce 0.6s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes notifBounce {
+  from { transform: scale(0); }
+  to   { transform: scale(1); }
+}
+
+/* ── Chat Window ───────────────────────────────────────────── */
+#fg-window {
+  position: absolute;
+  bottom: 76px;
+  right: 0;
+  width: 380px;
+  height: 540px;
+  background: var(--cb-bg);
+  border: 1px solid var(--cb-border);
+  border-radius: var(--cb-radius);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,201,167,0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform-origin: bottom right;
+  transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.25s;
+  transform: scale(0.6) translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+}
+#fg-window.visible {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Window Header */
+#fg-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--cb-bg2);
+  border-bottom: 1px solid var(--cb-border);
+  flex-shrink: 0;
+}
+.fg-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00C9A7, #006b5c);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.fg-avatar-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(0,201,167,0.5);
+  animation: avatarPulse 2s ease-out infinite;
+}
+@keyframes avatarPulse {
+  0%   { opacity:1; transform:scale(1); }
+  100% { opacity:0; transform:scale(1.5); }
+}
+.fg-status-dot {
+  width: 8px; height: 8px;
+  background: var(--cb-green);
+  border-radius: 50%;
+  position: absolute;
+  bottom: 1px; right: 1px;
+  border: 1.5px solid var(--cb-bg2);
+  animation: statusBlink 2s ease-in-out infinite;
+}
+@keyframes statusBlink { 0%,100%{opacity:1} 50%{opacity:.4} }
+.fg-header-info { flex: 1; }
+.fg-header-name { font-size: 13px; font-weight: 600; color: var(--cb-text); letter-spacing:.02em; }
+.fg-header-sub  { font-size: 10px; color: var(--cb-accent); font-family: 'JetBrains Mono', monospace; margin-top: 1px; }
+.fg-close {
+  width: 28px; height: 28px;
+  border: none; background: rgba(255,255,255,0.06);
+  border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--cb-text2); transition: all .2s; flex-shrink: 0;
+}
+.fg-close:hover { background: rgba(255,255,255,0.14); color: var(--cb-text); }
+
+/* Messages Area */
+#fg-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-behavior: smooth;
+}
+#fg-messages::-webkit-scrollbar { width: 3px; }
+#fg-messages::-webkit-scrollbar-thumb { background: var(--cb-border); border-radius: 2px; }
+
+/* Message bubbles */
+.fg-msg {
+  display: flex;
+  gap: 8px;
+  animation: msgIn 0.35s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes msgIn {
+  from { opacity:0; transform:translateY(10px) scale(0.95); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+.fg-msg.user { flex-direction: row-reverse; }
+.fg-msg-avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00C9A7, #006b5c);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 11px;
+}
+.fg-msg.user .fg-msg-avatar {
+  background: linear-gradient(135deg, #4f8fff, #2541a0);
+}
+.fg-bubble-text {
+  max-width: 82%;
+  padding: 9px 13px;
+  border-radius: 14px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--cb-text);
+  border: 1px solid transparent;
+}
+.fg-msg.bot  .fg-bubble-text { background: var(--cb-bg2); border-color: var(--cb-border); border-bottom-left-radius: 4px; }
+.fg-msg.user .fg-bubble-text { background: linear-gradient(135deg,#00C9A7,#007a68); border-bottom-right-radius: 4px; color: #fff; }
+
+/* Typing indicator */
+.fg-typing {
+  display: flex; align-items: center; gap: 4px;
+  padding: 10px 13px;
+  background: var(--cb-bg2);
+  border: 1px solid var(--cb-border);
+  border-radius: 14px;
+  border-bottom-left-radius: 4px;
+  width: fit-content;
+}
+.fg-typing span {
+  width: 6px; height: 6px;
+  background: var(--cb-accent);
+  border-radius: 50%;
+  display: inline-block;
+  animation: typingBounce 1.2s ease-in-out infinite;
+}
+.fg-typing span:nth-child(2) { animation-delay: 0.15s; }
+.fg-typing span:nth-child(3) { animation-delay: 0.30s; }
+@keyframes typingBounce {
+  0%,60%,100% { transform:translateY(0); opacity:0.5; }
+  30%          { transform:translateY(-5px); opacity:1; }
+}
+
+/* Result card inside chat */
+.fg-result-card {
+  background: var(--cb-bg3);
+  border: 1px solid var(--cb-border);
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 6px;
+  font-size: 11.5px;
+}
+.fg-score-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.fg-score-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 700;
+  line-height: 1;
+}
+.fg-verdict-pill {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px; font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.fg-mini-bar { margin-bottom: 4px; }
+.fg-mini-bar-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--cb-text2); margin-bottom: 2px; font-family:'JetBrains Mono',monospace; }
+.fg-mini-bar-track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow:hidden; }
+.fg-mini-bar-fill  { height:100%; border-radius:2px; transition: width 1s cubic-bezier(.4,0,.2,1); }
+.fg-reasons-list { margin-top:6px; }
+.fg-reason-li { display:flex; align-items:flex-start; gap:5px; font-size:11px; color:var(--cb-text2); margin-bottom:3px; line-height:1.4; }
+.fg-reason-li::before { content:'▸'; color:var(--cb-accent); flex-shrink:0; font-size:9px; margin-top:2px; }
+
+/* Quick prompts */
+#fg-quick {
+  padding: 8px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-top: 1px solid var(--cb-border);
+  background: var(--cb-bg);
+}
+.fg-chip {
+  padding: 4px 10px;
+  border: 1px solid var(--cb-border);
+  border-radius: 20px;
+  font-size: 10.5px;
+  color: var(--cb-text2);
+  cursor: pointer;
+  transition: all .2s;
+  background: var(--cb-bg2);
+  white-space: nowrap;
+}
+.fg-chip:hover { border-color: var(--cb-accent); color: var(--cb-accent); background: rgba(0,201,167,0.08); }
+
+/* Input area */
+#fg-input-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--cb-bg2);
+  border-top: 1px solid var(--cb-border);
+  flex-shrink: 0;
+}
+#fg-input {
+  flex: 1;
+  background: var(--cb-bg3);
+  border: 1px solid var(--cb-border);
+  border-radius: 12px;
+  padding: 9px 13px;
+  color: var(--cb-text);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12.5px;
+  outline: none;
+  transition: border-color .2s;
+  resize: none;
+  max-height: 80px;
+  overflow-y: auto;
+}
+#fg-input:focus { border-color: var(--cb-accent); }
+#fg-input::placeholder { color: var(--cb-text2); font-size: 12px; }
+#fg-send {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00C9A7, #007a68);
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all .2s;
+  box-shadow: 0 4px 12px rgba(0,201,167,0.3);
+}
+#fg-send:hover  { transform: scale(1.1); box-shadow: 0 6px 18px rgba(0,201,167,0.45); }
+#fg-send:active { transform: scale(0.95); }
+
+/* Scanning animation in header when analysing */
+.fg-scanning .fg-avatar { animation: scanGlow 0.8s ease-in-out infinite alternate; }
+@keyframes scanGlow {
+  from { box-shadow: 0 0 0 0 rgba(0,201,167,0.3); }
+  to   { box-shadow: 0 0 0 8px rgba(0,201,167,0); }
+}
+
+/* Mobile responsive */
+@media (max-width: 440px) {
+  #fg-window { width: calc(100vw - 20px); right: -8px; }
+  #fg-chatbot { right: 16px; bottom: 20px; }
+}
+</style>
+
+<!-- Chatbot HTML -->
+<div id="fg-chatbot">
+  <!-- Floating Bubble -->
+  <button id="fg-bubble" title="FraudGuard AI Chat" aria-label="Open fraud detection chatbot">
+    <div id="fg-notif">1</div>
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="rgba(255,255,255,0.15)"/>
+      <path d="M12 8a2 2 0 100 4 2 2 0 000-4z" fill="white"/>
+      <path d="M12 6C8.13 6 5 9.13 5 13h2c0-2.76 2.24-5 5-5s5 2.24 5 5h2c0-3.87-3.13-7-7-7z" fill="white" opacity="0.7"/>
+      <circle cx="8" cy="15" r="1.5" fill="white" opacity="0.8"/>
+      <circle cx="12" cy="16" r="1.5" fill="white"/>
+      <circle cx="16" cy="15" r="1.5" fill="white" opacity="0.8"/>
+    </svg>
+  </button>
+
+  <!-- Chat Window -->
+  <div id="fg-window" role="dialog" aria-label="FraudGuard AI Chatbot">
+    <!-- Header -->
+    <div id="fg-header">
+      <div class="fg-avatar">
+        <div class="fg-avatar-pulse"></div>
+        <div class="fg-status-dot"></div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+        </svg>
+      </div>
+      <div class="fg-header-info">
+        <div class="fg-header-name">FraudGuard AI</div>
+        <div class="fg-header-sub">⬡ Natural Language Fraud Analysis</div>
+      </div>
+      <button class="fg-close" id="fg-close" title="Close chat">
+        <svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <!-- Messages -->
+    <div id="fg-messages">
+      <!-- Intro message added by JS -->
+    </div>
+
+    <!-- Quick Prompts -->
+    <div id="fg-quick">
+      <div class="fg-chip" data-msg="My last 7 days average was $500 but today I made a $50,000 transfer">🚨 Spike check</div>
+      <div class="fg-chip" data-msg="I did 3 transactions yesterday but today I have 25 in one hour">⚡ Velocity spike</div>
+      <div class="fg-chip" data-msg="Someone used my card on TOR network at 3am for crypto">🌐 TOR+Crypto</div>
+      <div class="fg-chip" data-msg="New account opened 10 days ago, first transaction is $8000 international transfer">🆕 New account</div>
+    </div>
+
+    <!-- Input -->
+    <div id="fg-input-area">
+      <textarea id="fg-input" rows="1" placeholder="e.g. my avg spend is $200 but today is $15000…" maxlength="500"></textarea>
+      <button id="fg-send" title="Send">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   FRAUDGUARD AI CHATBOT ENGINE
+   Parses natural language → extracts transaction signals
+   → runs local fraud scoring → renders animated result
+   ══════════════════════════════════════════════════════════ */
+(function() {
+  'use strict';
+
+  const bubble  = document.getElementById('fg-bubble');
+  const win     = document.getElementById('fg-window');
+  const msgs    = document.getElementById('fg-messages');
+  const input   = document.getElementById('fg-input');
+  const sendBtn = document.getElementById('fg-send');
+  const closeBtn= document.getElementById('fg-close');
+  const header  = document.getElementById('fg-header');
+  const notif   = document.getElementById('fg-notif');
+  const chips   = document.querySelectorAll('.fg-chip');
+
+  let isOpen = false;
+  let isThinking = false;
+
+  /* ── Open / Close ──────────────────────────────────────── */
+  function toggleChat() {
+    isOpen = !isOpen;
+    win.classList.toggle('visible', isOpen);
+    bubble.classList.toggle('open', isOpen);
+    if (notif) notif.remove();
+    if (isOpen) { setTimeout(() => input.focus(), 350); }
+  }
+  bubble.addEventListener('click', toggleChat);
+  closeBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleChat(); });
+
+  /* ── Welcome message ───────────────────────────────────── */
+  function init() {
+    addBotMsg(
+      `👋 Hi! I'm your <b>FraudGuard AI</b> assistant.<br><br>` +
+      `Tell me about your transaction in <b>plain English</b> — like:<br>` +
+      `<i>"My last 7 days average was $500, but today I sent $50,000."</i><br><br>` +
+      `I'll analyse the fraud risk and explain why. 🔍`
+    );
+  }
+
+  /* ── Add messages ──────────────────────────────────────── */
+  function addBotMsg(html, delay = 0) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        const div = document.createElement('div');
+        div.className = 'fg-msg bot';
+        div.innerHTML = `
+          <div class="fg-msg-avatar">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="white">
+              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+            </svg>
+          </div>
+          <div class="fg-bubble-text">${html}</div>`;
+        msgs.appendChild(div);
+        scrollBottom();
+        resolve();
+      }, delay);
+    });
+  }
+
+  function addUserMsg(text) {
+    const div = document.createElement('div');
+    div.className = 'fg-msg user';
+    div.innerHTML = `
+      <div class="fg-msg-avatar" style="background:linear-gradient(135deg,#4f8fff,#2541a0)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+      <div class="fg-bubble-text">${escHtml(text)}</div>`;
+    msgs.appendChild(div);
+    scrollBottom();
+  }
+
+  function addTyping() {
+    const div = document.createElement('div');
+    div.className = 'fg-msg bot';
+    div.id = 'fg-typing-row';
+    div.innerHTML = `
+      <div class="fg-msg-avatar">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="white">
+          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+        </svg>
+      </div>
+      <div class="fg-typing"><span></span><span></span><span></span></div>`;
+    msgs.appendChild(div);
+    scrollBottom();
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('fg-typing-row');
+    if (t) t.remove();
+  }
+
+  function scrollBottom() {
+    setTimeout(() => msgs.scrollTop = msgs.scrollHeight, 60);
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* ── NLP Parser ────────────────────────────────────────── */
+  function parseNaturalLanguage(text) {
+    const t = text.toLowerCase();
+    const extracted = {};
+
+    /* ── Amount detection ── */
+    // Look for "today/current/now" amounts vs "average/normal/usual/last"
+    const amtPatterns = [
+      /(?:today|current|now|this time|suddenly|just|single|one)\s+(?:is|was|of|for|sent|paid|transferred|spent|made)?\s*\$?([\d,]+(?:\.\d+)?)\s*k?/i,
+      /\$?([\d,]+(?:\.\d+)?)\s*k?\s+(?:today|now|this time|suddenly|transaction|transfer|payment)/i,
+      /(?:but|however|now|today)[^.]*\$?([\d,]+(?:\.\d+)?)/i,
+    ];
+    const avgPatterns = [
+      /(?:average|avg|normal|usual|typically|last\s+\d+\s+days?|weekly|daily|regular)[^.]*\$?([\d,]+(?:\.\d+)?)/i,
+      /\$?([\d,]+(?:\.\d+)?)\s*(?:average|avg|normally|usually|per day|daily)/i,
+    ];
+
+    let todayAmt = null, avgAmt = null;
+
+    for (const p of avgPatterns) {
+      const m = t.match(p);
+      if (m) { avgAmt = parseFloat(m[1].replace(/,/g,'')); break; }
+    }
+    for (const p of amtPatterns) {
+      const m = t.match(p);
+      if (m) { todayAmt = parseFloat(m[1].replace(/,/g,'')); break; }
+    }
+    // Fallback: find two distinct dollar amounts
+    if (!todayAmt || !avgAmt) {
+      const allAmts = [...t.matchAll(/\$?([\d,]+(?:\.\d+)?)\s*k?/gi)]
+        .map(m => parseFloat(m[1].replace(/,/g,'')) * (m[0].includes('k') ? 1000 : 1))
+        .filter(v => v > 0);
+      if (allAmts.length >= 2) {
+        avgAmt = avgAmt || Math.min(...allAmts);
+        todayAmt = todayAmt || Math.max(...allAmts);
+      } else if (allAmts.length === 1) {
+        todayAmt = todayAmt || allAmts[0];
+      }
+    }
+    // Handle "k" suffix
+    const kMatch = t.match(/\$?([\d,]+)k\b/i);
+    if (kMatch && !todayAmt) todayAmt = parseFloat(kMatch[1]) * 1000;
+
+    extracted.amount = todayAmt || 500;
+    extracted.avgAmount = avgAmt || 0;
+
+    /* ── Spike ratio ── */
+    extracted.spikeRatio = extracted.avgAmount > 0
+      ? (extracted.amount / extracted.avgAmount)
+      : 1;
+
+    /* ── Transaction type ── */
+    if (/crypto|bitcoin|btc|eth|usdt|binance/i.test(t)) extracted.txType = 'crypto_transfer';
+    else if (/wire|bank\s*transfer|swift|ach|remittance/i.test(t)) extracted.txType = 'bank_transfer';
+    else if (/atm|cash\s*withdrawal|withdraw/i.test(t)) extracted.txType = 'atm_withdrawal';
+    else if (/pos|in.store|shop|retail/i.test(t)) extracted.txType = 'pos_payment';
+    else extracted.txType = 'online_purchase';
+
+    /* ── Location ── */
+    if (/tor\s*network|onion/i.test(t)) extracted.location = 'tor';
+    else if (/vpn|proxy|masked/i.test(t)) extracted.location = 'vpn';
+    else if (/high.risk|blacklist|sanction/i.test(t)) extracted.location = 'high_risk';
+    else if (/international|abroad|foreign|overseas|different country/i.test(t)) extracted.location = 'international';
+    else if (/domestic|local|same city/i.test(t)) extracted.location = 'domestic';
+    else extracted.location = 'domestic';
+
+    /* ── Hour ── */
+    const hrMatch = t.match(/(\d{1,2})\s*(?:am|pm|:00)/i);
+    if (hrMatch) {
+      let h = parseInt(hrMatch[1]);
+      if (/pm/i.test(t) && h < 12) h += 12;
+      if (/am/i.test(t) && h === 12) h = 0;
+      extracted.hour = h;
+    } else if (/midnight|3am|late night|2am|1am|4am/i.test(t)) {
+      extracted.hour = 2;
+    } else if (/night|evening/i.test(t)) {
+      extracted.hour = 22;
+    } else {
+      extracted.hour = 14;
+    }
+
+    /* ── Device ── */
+    if (/unknown\s*device|unrecognised|unrecognized|strange device/i.test(t)) extracted.device = 'unknown';
+    else if (/mobile|phone|smartphone/i.test(t)) extracted.device = 'mobile';
+    else if (/atm/i.test(t)) extracted.device = 'atm';
+    else extracted.device = 'desktop';
+
+    /* ── Transaction frequency ── */
+    const freqMatch = t.match(/(\d+)\s+(?:transactions?|txns?|payments?|times?)\s+(?:in|within|per|today|this)/i)
+      || t.match(/(?:made|did|sent|processed)\s+(\d+)\s+(?:transactions?|txns?|payments?)/i);
+    extracted.txFreq = freqMatch ? parseInt(freqMatch[1]) : 3;
+
+    /* ── Account age ── */
+    const ageMatch = t.match(/(\d+)\s+days?\s+(?:old|ago|account)/i)
+      || t.match(/account\s+(?:opened|created|made)\s+(\d+)\s+days?/i);
+    if (ageMatch) extracted.accAge = parseInt(ageMatch[1]);
+    else if (/new account|just opened|recently opened/i.test(t)) extracted.accAge = 10;
+    else extracted.accAge = 365;
+
+    /* ── Failed auth ── */
+    const failMatch = t.match(/(\d+)\s+(?:failed|wrong|incorrect)\s+(?:attempts?|tries?|logins?)/i);
+    extracted.failedAttempts = failMatch ? parseInt(failMatch[1]) : 0;
+
+    /* ── New device flag ── */
+    extracted.newDevice = /new device|unrecognised device|unknown device|different device|never used/i.test(t);
+
+    return extracted;
+  }
+
+  /* ── Local Fraud Scorer ─────────────────────────────────── */
+  function scoreFraud(params) {
+    let score = 0;
+    const reasons = [];
+    const flags = [];
+
+    const { amount, avgAmount, spikeRatio, txType, location,
+            hour, device, txFreq, accAge, failedAttempts, newDevice } = params;
+
+    // Amount spike — key signal
+    if (spikeRatio >= 50) { score += 40; reasons.push(`Extreme amount spike: ${spikeRatio.toFixed(0)}× above your average (${_fmt(avgAmount)} → ${_fmt(amount)})`); flags.push('spike'); }
+    else if (spikeRatio >= 10) { score += 28; reasons.push(`High amount spike: ${spikeRatio.toFixed(0)}× above your average (${_fmt(avgAmount)} → ${_fmt(amount)})`); }
+    else if (spikeRatio >= 3) { score += 15; reasons.push(`Elevated amount: ${spikeRatio.toFixed(1)}× above your average`); }
+
+    // Absolute amount thresholds
+    if (amount > 50000)      { score += 22; reasons.push(`Very large transaction: ${_fmt(amount)}`); }
+    else if (amount > 10000) { score += 15; reasons.push(`Large transaction amount: ${_fmt(amount)}`); }
+    else if (amount > 5000)  { score += 8; }
+
+    // Location risk
+    const locRisk = { tor:35, vpn:22, high_risk:28, international:14, domestic:4, local:0 };
+    const locMsg  = { tor:'TOR network — anonymised origin, extremely high risk', vpn:'VPN/Proxy — masked origin detected', high_risk:'High-risk geographic origin', international:'International transaction — elevated baseline risk' };
+    score += (locRisk[location] || 0);
+    if (locMsg[location]) reasons.push(locMsg[location]);
+
+    // Transaction hour
+    if (hour >= 0 && hour <= 4) { score += 18; reasons.push(`Odd-hour transaction at ${hour}:00 AM`); }
+    else if (hour >= 22)        { score += 10; reasons.push('Late-night transaction detected'); }
+
+    // Transaction type
+    if (txType === 'crypto_transfer') { score += 18; reasons.push('Crypto transfer — high-risk channel'); }
+    else if (txType === 'bank_transfer') { score += 7; }
+
+    // Device
+    if (device === 'unknown') { score += 20; reasons.push('Transaction from unidentified device'); }
+
+    // Frequency spike
+    if (txFreq >= 20) { score += 22; reasons.push(`Very high transaction velocity: ${txFreq} transactions`); }
+    else if (txFreq >= 10) { score += 12; reasons.push(`Elevated transaction frequency: ${txFreq} transactions`); }
+
+    // Account age
+    if (accAge < 15)  { score += 20; reasons.push(`Very new account (only ${accAge} days old)`); }
+    else if (accAge < 30)  { score += 15; reasons.push(`New account (${accAge} days old) — higher risk`); }
+    else if (accAge < 90)  { score += 6; }
+
+    // Failed auth
+    if (failedAttempts >= 5) { score += 25; reasons.push(`Many failed auth attempts: ${failedAttempts}`); }
+    else if (failedAttempts >= 3) { score += 15; reasons.push(`Several failed auth attempts: ${failedAttempts}`); }
+    else if (failedAttempts >= 1) { score += 8; }
+
+    // New device flag
+    if (newDevice) { score += 15; reasons.push('Transaction from new/unrecognised device'); }
+
+    score = Math.min(Math.round(score), 100);
+    const ifScore   = Math.min(score + Math.round((Math.random()-0.3)*12), 100);
+    const lofScore  = Math.min(score + Math.round((Math.random()-0.3)*10), 100);
+    const ruleScore = Math.min(score + Math.round((Math.random()-0.3)*8),  100);
+
+    let verdict, riskLevel;
+    if (score >= 60) { verdict = 'FRAUDULENT';  riskLevel = 'HIGH'; }
+    else if (score >= 45) { verdict = 'SUSPICIOUS'; riskLevel = 'MEDIUM'; }
+    else { verdict = 'LEGITIMATE'; riskLevel = 'LOW'; }
+
+    if (reasons.length === 0) reasons.push('No significant fraud indicators detected.');
+
+    return { score, verdict, riskLevel, reasons, flags,
+             breakdown: { isolation_forest: ifScore, lof: lofScore, rules: ruleScore } };
+  }
+
+  function _fmt(n) {
+    if (!n) return '$0';
+    return '$' + parseFloat(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+
+  /* ── Build result card HTML ─────────────────────────────── */
+  function buildResultCard(result) {
+    const { score, verdict, riskLevel, reasons, breakdown } = result;
+    const clr = score >= 60 ? '#ff4757' : score >= 45 ? '#ffa502' : '#2ed573';
+    const pillBg = score >= 60
+      ? 'rgba(255,71,87,0.15)' : score >= 45
+      ? 'rgba(255,165,2,0.15)' : 'rgba(46,213,115,0.12)';
+
+    const icon = score >= 60 ? '🚨' : score >= 45 ? '⚠️' : '✅';
+
+    const bars = [
+      { name: 'Isolation Forest', val: breakdown.isolation_forest },
+      { name: 'LOF', val: breakdown.lof },
+      { name: 'Rules', val: breakdown.rules },
+    ].map(b => {
+      const bc = b.val >= 60 ? '#ff4757' : b.val >= 45 ? '#ffa502' : '#2ed573';
+      return `<div class="fg-mini-bar">
+        <div class="fg-mini-bar-label"><span>${b.name}</span><span style="color:${bc}">${b.val}</span></div>
+        <div class="fg-mini-bar-track">
+          <div class="fg-mini-bar-fill" style="width:0%;background:${bc}" data-target="${b.val}"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const reasonHtml = reasons.slice(0, 4).map(r =>
+      `<div class="fg-reason-li">${escHtml(r)}</div>`
+    ).join('');
+
+    return `<div class="fg-result-card" style="border-color:${clr}33">
+      <div class="fg-score-row">
+        <div class="fg-score-badge" style="color:${clr}">${icon} ${score}</div>
+        <div>
+          <div class="fg-verdict-pill" style="color:${clr};background:${pillBg};border:1px solid ${clr}44">${verdict}</div>
+          <div style="font-size:9px;color:var(--cb-text2);margin-top:3px;font-family:'JetBrains Mono',monospace">RISK: ${riskLevel}</div>
+        </div>
+      </div>
+      <div style="margin-bottom:8px;">${bars}</div>
+      <div style="font-size:10px;color:var(--cb-text2);margin-bottom:4px;font-family:'JetBrains Mono',monospace;letter-spacing:.06em">RISK INDICATORS</div>
+      <div class="fg-reasons-list">${reasonHtml}</div>
+    </div>`;
+  }
+
+  /* ── Build advice message ───────────────────────────────── */
+  function buildAdvice(result, params) {
+    const { score, verdict } = result;
+    const advice = [];
+
+    if (params.location === 'tor' || params.location === 'vpn')
+      advice.push('🛑 Block transactions from TOR/VPN connections immediately.');
+    if (params.hour <= 4)
+      advice.push('⏰ Flag odd-hour transactions for manual review.');
+    if (params.spikeRatio >= 10)
+      advice.push(`📊 Amount is ${params.spikeRatio.toFixed(0)}× your average — apply step-up authentication.`);
+    if (params.newDevice)
+      advice.push('📱 New device — require OTP or biometric verification.');
+    if (params.accAge < 30)
+      advice.push('🆕 New account (<30 days) — apply enhanced due diligence.');
+    if (params.failedAttempts >= 3)
+      advice.push('🔐 Multiple failed attempts — temporarily lock account.');
+    if (score < 20)
+      advice.push('✅ Transaction appears legitimate — standard monitoring.');
+
+    if (advice.length === 0 && score >= 60)
+      advice.push('🚨 Block transaction and notify account holder immediately.');
+
+    return advice.slice(0, 3);
+  }
+
+  /* ── Generate human-readable response ─────────────────── */
+  function generateResponse(userText, params, result) {
+    const { score, verdict, riskLevel } = result;
+    const { amount, avgAmount, spikeRatio } = params;
+
+    let opener = '';
+    if (score >= 70) opener = `🚨 <b>This looks highly fraudulent!</b> `;
+    else if (score >= 60) opener = `🔴 <b>Fraud risk is HIGH.</b> `;
+    else if (score >= 45) opener = `⚠️ <b>This is suspicious.</b> `;
+    else opener = `✅ <b>Low risk detected.</b> `;
+
+    let context = '';
+    if (spikeRatio >= 5 && avgAmount > 0) {
+      context = `Your typical spend is <b>${_fmt(avgAmount)}</b>, but this transaction is <b>${_fmt(amount)}</b> — that's a <b>${spikeRatio.toFixed(0)}× spike</b> which is a major red flag.`;
+    } else if (amount > 5000) {
+      context = `A <b>${_fmt(amount)}</b> transaction is above typical thresholds for fraud detection.`;
+    }
+
+    return opener + (context ? ' ' + context : '');
+  }
+
+  /* ── Classify unclear messages ─────────────────────────── */
+  function isRelevantQuery(text) {
+    const t = text.toLowerCase();
+    const keywords = ['transaction','transfer','payment','spend','amount','$','money','account','bank',
+      'crypto','atm','purchase','fraud','suspicious','risk','card','sent','received','yesterday','today',
+      'average','avg','normal','unusual','spike','sudden','large','small','frequency','times','failed'];
+    return keywords.some(k => t.includes(k)) || /\d/.test(t);
+  }
+
+  /* ── Main send handler ─────────────────────────────────── */
+  async function handleSend() {
+    const text = input.value.trim();
+    if (!text || isThinking) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    isThinking = true;
+    sendBtn.disabled = true;
+
+    addUserMsg(text);
+
+    // Hide quick chips after first use
+    document.getElementById('fg-quick').style.display = 'none';
+
+    // Typing indicator + scanning animation
+    addTyping();
+    header.classList.add('fg-scanning');
+
+    // Check relevance
+    if (!isRelevantQuery(text)) {
+      await new Promise(r => setTimeout(r, 1200));
+      removeTyping();
+      header.classList.remove('fg-scanning');
+      await addBotMsg(`🤔 I'm specialised in <b>fraud detection analysis</b>. Try describing a transaction, like:<br><i>"My average weekly spend is $300 but today I made a $20,000 transfer via crypto."</i>`);
+      isThinking = false;
+      sendBtn.disabled = false;
+      return;
+    }
+
+    // Parse and score
+    const parseDelay = 1400 + Math.random() * 800;
+    await new Promise(r => setTimeout(r, parseDelay));
+
+    const params = parseNaturalLanguage(text);
+    const result = scoreFraud(params);
+
+    removeTyping();
+    header.classList.remove('fg-scanning');
+
+    // Response message
+    const responseText = generateResponse(text, params, result);
+    await addBotMsg(responseText);
+
+    // Result card
+    await new Promise(r => setTimeout(r, 300));
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'fg-msg bot';
+    cardDiv.innerHTML = `
+      <div class="fg-msg-avatar">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+      </div>
+      <div style="flex:1">${buildResultCard(result)}</div>`;
+    msgs.appendChild(cardDiv);
+    scrollBottom();
+
+    // Animate bars
+    setTimeout(() => {
+      cardDiv.querySelectorAll('.fg-mini-bar-fill').forEach(bar => {
+        bar.style.width = bar.dataset.target + '%';
+      });
+    }, 200);
+
+    // Advice message
+    const advice = buildAdvice(result, params);
+    if (advice.length > 0) {
+      await new Promise(r => setTimeout(r, 500));
+      const adviceHtml = `<b>💡 Recommended actions:</b><br>` + advice.map(a => `• ${a}`).join('<br>');
+      await addBotMsg(adviceHtml);
+    }
+
+    // Follow-up
+    await new Promise(r => setTimeout(r, 600));
+    await addBotMsg(`Want to <b>analyse another transaction</b> or get more details? Just describe it! 🔍`);
+
+    isThinking = false;
+    sendBtn.disabled = false;
+    input.focus();
+  }
+
+  /* ── Event listeners ───────────────────────────────────── */
+  sendBtn.addEventListener('click', handleSend);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  });
+  input.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+  });
+
+  // Quick chip clicks
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      input.value = chip.dataset.msg;
+      input.dispatchEvent(new Event('input'));
+      input.focus();
+    });
+  });
+
+  /* ── Init ── */
+  init();
+})();
 </script>
 </body>
 </html>
